@@ -184,3 +184,8 @@ else:
     st.warning("⚠️ Banner image not found. (assets/goldenhour.png)")
 
 st.divider()
+   # ---------------- START NEW EMERGENCY (FINAL FEATURE) ----------------
+    st.divider()
+    if st.button("🔄 Start New Emergency"):
+        st.session_state.reset_trigger = True
+        st.rerun()
