@@ -1,13 +1,14 @@
 import streamlit as st
 import speech_recognition as sr
-import tempfile, os
+import tempfile
+import os
 from audio_recorder_streamlit import audio_recorder
 from emergency_data import classify_severity
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Golden Hour", layout="wide")
 
-# ---------------- INIT STATE ----------------
+# ---------------- INIT SESSION STATE ----------------
 def init_state():
     defaults = {
         "user_role": None,
@@ -27,7 +28,7 @@ def init_state():
 
 init_state()
 
-# ---------------- HANDLE RESET EARLY ----------------
+# ---------------- HANDLE RESET (BEFORE UI) ----------------
 if st.session_state.reset_trigger:
     st.session_state.all_symptoms = []
     st.session_state.ui_selected = []
@@ -35,7 +36,7 @@ if st.session_state.reset_trigger:
     st.session_state.reset_trigger = False
     st.rerun()
 
-# ---------------- HELPERS ----------------
+# ---------------- HELPER FUNCTIONS ----------------
 def split_text(text):
     for sep in [",", "&", " and "]:
         text = text.replace(sep, "|")
@@ -49,8 +50,8 @@ def add_symptoms(items):
             st.session_state.all_symptoms.append(s)
 
 def maps_link(level="normal"):
-    q = "trauma hospital near me" if level == "severe" else "hospital near me"
-    return f"https://www.google.com/maps/search/{q.replace(' ', '+')}"
+    query = "trauma hospital near me" if level == "severe" else "hospital near me"
+    return f"https://www.google.com/maps/search/{query.replace(' ', '+')}"
 
 # ---------------- HEADER ----------------
 st.title("🚨 Golden Hour")
@@ -73,10 +74,10 @@ if st.session_state.user_role == "👥 I am helping someone else":
 
     st.write("### 🛡️ Ensure Safety")
     st.write("• Make sure the area is safe for you")
-    st.write("• Do not put yourself at risk")
+    st.write("• Do not put yourself in danger")
 
     st.write("### 🩺 Immediate First Aid")
-    st.write("• Do NOT move the patient unless necessary")
+    st.write("• Do NOT move the patient unnecessarily")
     st.write("• Apply pressure to stop heavy bleeding")
     st.write("• Check breathing and responsiveness")
     st.write("• Keep the patient calm and warm")
@@ -88,22 +89,28 @@ if st.session_state.user_role == "👥 I am helping someone else":
     st.divider()
     st.success("⬇️ Now report the patient’s symptoms below")
 
-# ================= SYMPTOM FLOW (BOTH ROLES) =================
+# ================= SYMPTOM FLOW (PATIENT + HELPER) =================
 if st.session_state.user_role:
 
     main, side = st.columns([3, 1])
 
-    # -------- MAIN --------
+    # -------- MAIN COLUMN --------
     with main:
-
         st.write("### Select symptoms")
-        selected = st.multiselect("", st.session_state.options, key="ui_selected")
+        selected = st.multiselect(
+            "",
+            st.session_state.options,
+            key="ui_selected"
+        )
         if selected:
             add_symptoms(selected)
 
         st.write("### ➕ Add via text")
         with st.form("text_form", clear_on_submit=True):
-            text_input = st.text_input("", placeholder="fever, headache and dizziness")
+            text_input = st.text_input(
+                "",
+                placeholder="fever, headache and dizziness"
+            )
             if st.form_submit_button("Add Text") and text_input.strip():
                 add_symptoms(split_text(text_input))
 
@@ -114,20 +121,25 @@ if st.session_state.user_role:
         if audio_bytes:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
                 f.write(audio_bytes)
-                path = f.name
+                audio_path = f.name
 
-            r = sr.Recognizer()
+            recognizer = sr.Recognizer()
             try:
-                with sr.AudioFile(path) as src:
-                    audio = r.record(src)
-                st.session_state.voice_text = r.recognize_google(audio)
-            except:
+                with sr.AudioFile(audio_path) as source:
+                    audio = recognizer.record(source)
+                st.session_state.voice_text = recognizer.recognize_google(audio)
+            except sr.UnknownValueError:
+                st.error("Could not understand the voice")
+            except Exception:
                 st.error("Voice recognition failed")
             finally:
-                os.remove(path)
+                os.remove(audio_path)
 
         with st.form("voice_form", clear_on_submit=True):
-            voice_input = st.text_input("📝 Recognized voice", value=st.session_state.voice_text)
+            voice_input = st.text_input(
+                "📝 Recognized voice",
+                value=st.session_state.voice_text
+            )
             if st.form_submit_button("Add Voice") and voice_input.strip():
                 add_symptoms(split_text(voice_input))
 
@@ -141,11 +153,11 @@ if st.session_state.user_role:
             st.info("No symptoms added yet")
 
         st.divider()
-        if st.button("🗑️ Reset Symptoms"):
+        if st.button("🗑️ Reset All Symptoms"):
             st.session_state.reset_trigger = True
             st.rerun()
 
-    # -------- SEVERITY --------
+    # -------- SEVERITY CHECK --------
     if not st.session_state.all_symptoms:
         st.warning("Please add at least one symptom.")
         st.stop()
@@ -158,10 +170,11 @@ if st.session_state.user_role:
 
     st.divider()
 
+    # -------- RESULT --------
     if severity == "Severe":
         st.error("🔴 SEVERE EMERGENCY")
+        st.write("📞 Call emergency services immediately")
         st.markdown(f"[🧭 Find Trauma Hospitals]({maps_link('severe')})")
     else:
         st.warning("🟠 MEDICAL ATTENTION ADVISED")
-        st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link())}")
-
+        st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link()})")
