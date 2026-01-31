@@ -7,13 +7,8 @@ from emergency_data import classify_severity
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Golden Hour", layout="wide")
-st.title("🚨 Golden Hour")
-st.subheader("AI Emergency Decision Assistant")
 
-st.image("assets/golden_hour.png", use_column_width=True)
-
-
-# ---------------- INIT SESSION STATE ----------------
+# ---------------- SESSION STATE INIT ----------------
 def init_state():
     defaults = {
         "user_role": None,
@@ -33,7 +28,7 @@ def init_state():
 
 init_state()
 
-# ---------------- HANDLE RESET (BEFORE UI) ----------------
+# ---------------- RESET HANDLER ----------------
 if st.session_state.reset_trigger:
     st.session_state.all_symptoms = []
     st.session_state.ui_selected = []
@@ -41,7 +36,7 @@ if st.session_state.reset_trigger:
     st.session_state.reset_trigger = False
     st.rerun()
 
-# ---------------- HELPER FUNCTIONS ----------------
+# ---------------- HELPERS ----------------
 def split_text(text):
     for sep in [",", "&", " and "]:
         text = text.replace(sep, "|")
@@ -61,7 +56,10 @@ def maps_link(level="normal"):
 # ---------------- HEADER ----------------
 st.title("🚨 Golden Hour")
 st.subheader("AI Emergency Decision Assistant")
-st.write("Get instant guidance during medical emergencies")
+
+# 🔥 IMAGE LINK (THIS IS WHAT YOU WANTED)
+st.image("assets/golden_hour.png", use_column_width=True)
+
 st.divider()
 
 # ---------------- ROLE SELECTION ----------------
@@ -72,7 +70,7 @@ st.radio(
     key="user_role"
 )
 
-# ---------------- HELPER GUIDELINES (FIRST) ----------------
+# ---------------- HELPER GUIDELINES FIRST ----------------
 if st.session_state.user_role == "👥 I am helping someone else":
     st.divider()
     st.info("👥 **Helper Safety & First-Aid Guidelines**")
@@ -94,12 +92,12 @@ if st.session_state.user_role == "👥 I am helping someone else":
     st.divider()
     st.success("⬇️ Now report the patient’s symptoms below")
 
-# ================= SYMPTOM FLOW (PATIENT + HELPER) =================
+# ================= SYMPTOM FLOW (BOTH ROLES) =================
 if st.session_state.user_role:
 
     main, side = st.columns([3, 1])
 
-    # -------- MAIN COLUMN --------
+    # -------- MAIN --------
     with main:
         st.write("### Select symptoms")
         selected = st.multiselect(
@@ -133,9 +131,7 @@ if st.session_state.user_role:
                 with sr.AudioFile(audio_path) as source:
                     audio = recognizer.record(source)
                 st.session_state.voice_text = recognizer.recognize_google(audio)
-            except sr.UnknownValueError:
-                st.error("Could not understand the voice")
-            except Exception:
+            except:
                 st.error("Voice recognition failed")
             finally:
                 os.remove(audio_path)
@@ -162,7 +158,7 @@ if st.session_state.user_role:
             st.session_state.reset_trigger = True
             st.rerun()
 
-    # -------- SEVERITY CHECK --------
+    # -------- SEVERITY --------
     if not st.session_state.all_symptoms:
         st.warning("Please add at least one symptom.")
         st.stop()
@@ -175,7 +171,6 @@ if st.session_state.user_role:
 
     st.divider()
 
-    # -------- RESULT --------
     if severity == "Severe":
         st.error("🔴 SEVERE EMERGENCY")
         st.write("📞 Call emergency services immediately")
@@ -183,3 +178,4 @@ if st.session_state.user_role:
     else:
         st.warning("🟠 MEDICAL ATTENTION ADVISED")
         st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link()})")
+
