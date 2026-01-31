@@ -82,6 +82,8 @@ if st.session_state.user_role == "👥 I am helping someone else":
         st.markdown("### 🩺 Patient Check")
         st.markdown("🫁 Check breathing & responsiveness")
         st.markdown("🩸 Apply firm pressure if there is bleeding")
+        st.markdown("❤️ **Learn CPR:** [Watch CPR Video](https://youtu.be/2PngCv7NjaI)")
+
 
     st.markdown("---")
 
