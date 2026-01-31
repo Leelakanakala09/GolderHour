@@ -55,7 +55,7 @@ st.write("Get instant guidance during medical emergencies")
 st.divider()
 
 # -------- HELPER MODE CHECKBOX --------
-st.checkbox("☑️ I am helping someone else", key="helper_mode")
+st.checkbox(" I am helping someone else", key="helper_mode")
 
 main, side = st.columns([3, 1])
 
