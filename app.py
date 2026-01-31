@@ -36,7 +36,7 @@ if st.session_state.reset_trigger:
     st.session_state.reset_trigger = False
     st.rerun()
 
-# ---------------- HELPERS ----------------
+# ---------------- HELPER FUNCTIONS ----------------
 def split_text(text):
     for sep in [",", "&", " and "]:
         text = text.replace(sep, "|")
@@ -57,8 +57,13 @@ def maps_link(level="normal"):
 st.title("🚨 Golden Hour")
 st.subheader("AI Emergency Decision Assistant")
 
-# 🔥 IMAGE LINK (THIS IS WHAT YOU WANTED)
-st.image("assets/golden_hour.png", use_column_width=True)
+# ---------------- SAFE IMAGE LOAD ----------------
+IMAGE_PATH = "assets/goldenhour.png"
+
+if os.path.exists(IMAGE_PATH):
+    st.image(IMAGE_PATH, use_column_width=True)
+else:
+    st.warning("⚠️ Banner image not found. (assets/goldenhour.png)")
 
 st.divider()
 
@@ -70,7 +75,7 @@ st.radio(
     key="user_role"
 )
 
-# ---------------- HELPER GUIDELINES FIRST ----------------
+# ---------------- HELPER GUIDELINES ----------------
 if st.session_state.user_role == "👥 I am helping someone else":
     st.divider()
     st.info("👥 **Helper Safety & First-Aid Guidelines**")
@@ -92,7 +97,7 @@ if st.session_state.user_role == "👥 I am helping someone else":
     st.divider()
     st.success("⬇️ Now report the patient’s symptoms below")
 
-# ================= SYMPTOM FLOW (BOTH ROLES) =================
+# ================= SYMPTOMS (PATIENT + HELPER) =================
 if st.session_state.user_role:
 
     main, side = st.columns([3, 1])
