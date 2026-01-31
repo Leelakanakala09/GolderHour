@@ -27,6 +27,15 @@ def init_state():
             st.session_state[k] = v
 
 init_state()
+# ---------------- SAFE RESET HANDLER ----------------
+if st.session_state.reset_trigger:
+    st.session_state.all_symptoms = []
+    st.session_state.ui_selected = []
+    st.session_state.voice_text = ""
+    st.session_state.pop("user_role", None)  # SAFE reset for radio
+    st.session_state.reset_trigger = False
+    st.rerun()
+
 
 # ---------------- RESET HANDLER ----------------
 if st.session_state.reset_trigger:
@@ -183,5 +192,9 @@ if os.path.exists(IMAGE_PATH):
 else:
     st.warning("⚠️ Banner image not found. (assets/goldenhour.png)")
 
+  st.divider()
 
-  
+if st.button("🔄 Start New Emergency"):
+    st.session_state.reset_trigger = True
+    st.rerun()
+
