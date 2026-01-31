@@ -2,7 +2,6 @@ import streamlit as st
 import speech_recognition as sr
 import tempfile
 import os
-import time
 from audio_recorder_streamlit import audio_recorder
 from emergency_data import classify_severity
 
@@ -21,8 +20,7 @@ def init_state():
         "ui_selected": [],
         "all_symptoms": [],
         "voice_text": "",
-        "last_activity": time.time(),
-        "confirm_reset": False
+        "reset_trigger": False
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -30,22 +28,15 @@ def init_state():
 
 init_state()
 
-# ---------------- AUTO RESET AFTER 5 MIN ----------------
-AUTO_RESET_TIME = 300  # 5 minutes
-
-if time.time() - st.session_state.last_activity > AUTO_RESET_TIME:
+# ---------------- RESET HANDLER ----------------
+if st.session_state.reset_trigger:
     st.session_state.all_symptoms = []
     st.session_state.ui_selected = []
     st.session_state.voice_text = ""
-    st.session_state.user_role = None
-    st.session_state.confirm_reset = False
-    st.session_state.last_activity = time.time()
+    st.session_state.reset_trigger = False
     st.rerun()
 
-def update_activity():
-    st.session_state.last_activity = time.time()
-
-# ---------------- HELPERS ----------------
+# ---------------- HELPER FUNCTIONS ----------------
 def split_text(text):
     for sep in [",", "&", " and "]:
         text = text.replace(sep, "|")
@@ -57,7 +48,6 @@ def add_symptoms(items):
             st.session_state.options.append(s)
         if s not in st.session_state.all_symptoms:
             st.session_state.all_symptoms.append(s)
-    update_activity()
 
 def maps_link(level="normal"):
     query = "trauma hospital near me" if level == "severe" else "hospital near me"
@@ -67,9 +57,13 @@ def maps_link(level="normal"):
 st.title("🚨 Golden Hour")
 st.subheader("AI Emergency Decision Assistant")
 
-# Image in ROOT
-if os.path.exists("goldenhour.png"):
-    st.image("goldenhour.png", use_column_width=True)
+# ---------------- SAFE IMAGE LOAD ----------------
+IMAGE_PATH = "assets/golden_hour.png"
+
+if os.path.exists(IMAGE_PATH):
+    st.image(IMAGE_PATH, use_column_width=True)
+else:
+    st.warning("⚠️ Banner image not found. (assets/golden_hour.png)")
 
 st.divider()
 
@@ -78,22 +72,32 @@ st.write("## Who is using this website?")
 st.radio(
     "",
     ["👤 I am the patient", "👥 I am helping someone else"],
-    key="user_role",
-    on_change=update_activity
+    key="user_role"
 )
 
 # ---------------- HELPER GUIDELINES ----------------
 if st.session_state.user_role == "👥 I am helping someone else":
-    st.info("👥 **Helper Safety & First-Aid Guidelines**")
-    st.write("• Ensure the area is safe")
-    st.write("• Do NOT move the patient unnecessarily")
-    st.write("• Apply pressure if bleeding")
-    st.write("• Check breathing and responsiveness")
-    st.write("• Call emergency services immediately")
     st.divider()
-    st.success("⬇️ Now report the patient’s symptoms")
+    st.info("👥 **Helper Safety & First-Aid Guidelines**")
 
-# ================= SYMPTOMS =================
+    st.write("### 🛡️ Ensure Safety")
+    st.write("• Make sure the area is safe for you")
+    st.write("• Do not put yourself in danger")
+
+    st.write("### 🩺 Immediate First Aid")
+    st.write("• Do NOT move the patient unnecessarily")
+    st.write("• Apply pressure to stop heavy bleeding")
+    st.write("• Check breathing and responsiveness")
+    st.write("• Keep the patient calm and warm")
+
+    st.write("### 📞 Emergency Action")
+    st.write("• Call emergency services immediately")
+    st.write("• Stay with the patient until help arrives")
+
+    st.divider()
+    st.success("⬇️ Now report the patient’s symptoms below")
+
+# ================= SYMPTOMS (PATIENT + HELPER) =================
 if st.session_state.user_role:
 
     main, side = st.columns([3, 1])
@@ -104,15 +108,17 @@ if st.session_state.user_role:
         selected = st.multiselect(
             "",
             st.session_state.options,
-            key="ui_selected",
-            on_change=update_activity
+            key="ui_selected"
         )
         if selected:
             add_symptoms(selected)
 
         st.write("### ➕ Add via text")
         with st.form("text_form", clear_on_submit=True):
-            text_input = st.text_input("", placeholder="fever, headache and dizziness")
+            text_input = st.text_input(
+                "",
+                placeholder="fever, headache and dizziness"
+            )
             if st.form_submit_button("Add Text") and text_input.strip():
                 add_symptoms(split_text(text_input))
 
@@ -123,21 +129,23 @@ if st.session_state.user_role:
         if audio_bytes:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
                 f.write(audio_bytes)
-                path = f.name
+                audio_path = f.name
 
-            r = sr.Recognizer()
+            recognizer = sr.Recognizer()
             try:
-                with sr.AudioFile(path) as src:
-                    audio = r.record(src)
-                st.session_state.voice_text = r.recognize_google(audio)
-                update_activity()
+                with sr.AudioFile(audio_path) as source:
+                    audio = recognizer.record(source)
+                st.session_state.voice_text = recognizer.recognize_google(audio)
             except:
                 st.error("Voice recognition failed")
             finally:
-                os.remove(path)
+                os.remove(audio_path)
 
         with st.form("voice_form", clear_on_submit=True):
-            voice_input = st.text_input("📝 Recognized voice", value=st.session_state.voice_text)
+            voice_input = st.text_input(
+                "📝 Recognized voice",
+                value=st.session_state.voice_text
+            )
             if st.form_submit_button("Add Voice") and voice_input.strip():
                 add_symptoms(split_text(voice_input))
 
@@ -149,6 +157,11 @@ if st.session_state.user_role:
                 st.success(s)
         else:
             st.info("No symptoms added yet")
+
+        st.divider()
+        if st.button("🗑️ Reset All Symptoms"):
+            st.session_state.reset_trigger = True
+            st.rerun()
 
     # -------- SEVERITY --------
     if not st.session_state.all_symptoms:
@@ -165,32 +178,8 @@ if st.session_state.user_role:
 
     if severity == "Severe":
         st.error("🔴 SEVERE EMERGENCY")
+        st.write("📞 Call emergency services immediately")
         st.markdown(f"[🧭 Find Trauma Hospitals]({maps_link('severe')})")
     else:
         st.warning("🟠 MEDICAL ATTENTION ADVISED")
         st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link()})")
-
-    # ================= RESET WITH CONFIRMATION =================
-    st.divider()
-    st.write("### 🔄 Start New Emergency")
-
-    if st.button("Start New Emergency"):
-        st.session_state.confirm_reset = True
-
-    if st.session_state.confirm_reset:
-        st.warning("⚠️ Are you sure you want to clear everything?")
-        col1, col2 = st.columns(2)
-
-        with col1:
-            if st.button("✅ Yes, Reset"):
-                st.session_state.all_symptoms = []
-                st.session_state.ui_selected = []
-                st.session_state.voice_text = ""
-                st.session_state.user_role = None
-                st.session_state.confirm_reset = False
-                st.session_state.last_activity = time.time()
-                st.rerun()
-
-        with col2:
-            if st.button("❌ Cancel"):
-                st.session_state.confirm_reset = False
