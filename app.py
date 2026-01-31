@@ -58,7 +58,6 @@ st.title("🚨 Golden Hour")
 st.subheader("AI Emergency Decision Assistant")
 
 
-
 # ---------------- ROLE SELECTION ----------------
 st.write("## Who is using this website?")
 st.radio(
@@ -175,7 +174,7 @@ if st.session_state.user_role:
     else:
         st.warning("🟠 MEDICAL ATTENTION ADVISED")
         st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link()})")
-# ---------------- SAFE IMAGE LOAD ----------------
+        # ---------------- SAFE IMAGE LOAD ----------------
 IMAGE_PATH = "assets/goldenhour.png"
 
 if os.path.exists(IMAGE_PATH):
@@ -184,3 +183,4 @@ else:
     st.warning("⚠️ Banner image not found. (assets/goldenhour.png)")
 
 st.divider()
+
