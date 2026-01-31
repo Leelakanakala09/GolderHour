@@ -28,13 +28,12 @@ def init_state():
 
 init_state()
 
-
 # ---------------- RESET HANDLER ----------------
 if st.session_state.reset_trigger:
     st.session_state.all_symptoms = []
     st.session_state.ui_selected = []
     st.session_state.voice_text = ""
-    st.session_state.reset_trigger = True
+    st.session_state.reset_trigger = False
     st.rerun()
 
 # ---------------- HELPER FUNCTIONS ----------------
@@ -183,9 +182,10 @@ if os.path.exists(IMAGE_PATH):
     st.image(IMAGE_PATH, use_column_width=True)
 else:
     st.warning("⚠️ Banner image not found. (assets/goldenhour.png)")
+
 st.divider()
-
-if st.button("🔄 Start New Emergency"):
-    st.session_state.reset_trigger = True
-    st.rerun()
-
+   # ---------------- START NEW EMERGENCY (FINAL FEATURE) ----------------
+    st.divider()
+    if st.button("🔄 Start New Emergency"):
+        st.session_state.reset_trigger = True
+        st.rerun()
