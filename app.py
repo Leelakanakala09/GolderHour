@@ -53,11 +53,8 @@ def maps_link(level="normal"):
 
 def explain_severity(symptoms, severity):
     severe_indicators = [
-        "Chest Pain",
-        "Breathing Problem",
-        "Heavy Bleeding",
-        "Road Accident",
-        "Burn Injury"
+        "Chest Pain", "Breathing Problem",
+        "Heavy Bleeding", "Road Accident", "Burn Injury"
     ]
     matched = [s for s in symptoms if s in severe_indicators]
 
@@ -65,57 +62,39 @@ def explain_severity(symptoms, severity):
         return (
             "⚠️ **Why this is severe?**\n\n"
             f"The selected symptom(s) **{', '.join(matched)}** are commonly associated "
-            "with life-threatening conditions that require immediate medical attention."
+            "with potentially life-threatening conditions that require immediate care."
         )
 
     return (
         "ℹ️ **Why this is urgent?**\n\n"
-        "The selected symptoms do not immediately indicate life-threatening trauma, "
-        "but they still require prompt medical evaluation."
+        "The selected symptoms may worsen if ignored and should be evaluated by a medical professional."
     )
 
 # ---------------- AI CHAT FUNCTION ----------------
-def ai_free_chat(user_question, symptoms, severity, role):
-    q = user_question.lower()
+def ai_free_chat(question, symptoms, severity, role):
+    q = question.lower()
     symptom_text = ", ".join(symptoms) if symptoms else "the reported symptoms"
 
-    if any(word in q for word in ["severe", "serious", "danger", "life"]):
-        return (
-            f"Based on **{symptom_text}**, this case is classified as **{severity}**. "
-            "Severe cases may involve life-threatening conditions and should not be delayed."
-        )
+    if any(x in q for x in ["severe", "serious", "danger"]):
+        return f"Based on **{symptom_text}**, this case is classified as **{severity}**, indicating potential medical risk."
 
-    if any(word in q for word in ["what should", "what to do", "next step", "now"]):
+    if any(x in q for x in ["what should", "what to do", "next"]):
         if severity == "Severe":
-            return (
-                "You should seek **immediate emergency medical care**. "
-                "Call emergency services and go to the nearest trauma hospital."
-            )
-        return (
-            "It is advisable to consult a medical professional soon and monitor symptoms closely."
-        )
+            return "You should immediately call emergency services and go to the nearest trauma hospital."
+        return "You should consult a doctor soon and monitor symptoms carefully."
 
-    if any(word in q for word in ["cpr", "first aid"]):
-        return (
-            "CPR may be required if the patient is unresponsive and not breathing normally. "
-            "Only perform CPR if you are trained. Please refer to the CPR video provided above."
-        )
+    if "cpr" in q or "first aid" in q:
+        return "CPR should only be performed if the patient is unresponsive and not breathing normally. Use the CPR video provided above."
 
-    if any(word in q for word in ["hospital", "doctor", "clinic"]):
-        return (
-            "Visiting a nearby hospital is recommended based on the current symptoms. "
-            "Use the hospital locator provided to find the nearest facility."
-        )
+    if "hospital" in q or "doctor" in q:
+        return "A hospital visit is advised. Use the hospital locator link above to find nearby facilities."
 
     if role == "👥 I am helping someone else":
-        return (
-            "As a helper, ensure your own safety first, avoid unnecessary movement of the patient, "
-            "and follow emergency service instructions carefully."
-        )
+        return "As a helper, ensure your own safety, avoid moving the patient unnecessarily, and follow emergency instructions."
 
     return (
-        "I understand your concern. Based on the available information, "
-        "please continue monitoring the symptoms and seek medical help if the condition worsens."
+        "I understand your concern. Based on the current information, "
+        "please monitor the situation closely and seek medical help if symptoms worsen."
     )
 
 # ---------------- HEADER ----------------
@@ -135,10 +114,9 @@ st.radio(
 # ---------------- HELPER GUIDELINES ----------------
 if st.session_state.user_role == "👥 I am helping someone else":
     st.markdown("## 🛟 Helper Safety & First-Aid Guidelines")
-    st.info("⚠️ Your safety comes first. Stay calm and act quickly.")
+    st.info("⚠️ Your safety comes first.")
 
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown("### 🧍‍♂️ Scene Safety")
         st.markdown("✅ Ensure the area is safe")
@@ -147,23 +125,69 @@ if st.session_state.user_role == "👥 I am helping someone else":
     with col2:
         st.markdown("### 🩺 Patient Check")
         st.markdown("🫁 Check breathing & responsiveness")
-        st.markdown("🩸 Apply pressure if bleeding")
+        st.markdown("🩸 Apply firm pressure if bleeding")
         st.markdown("❤️ **Learn CPR:** [Watch CPR Video](https://youtu.be/2PngCv7NjaI)")
 
+    st.markdown(
+        """
+        🚑 **Emergency Action**
+        - 📞 Call emergency services immediately
+        - ⏱️ Every second matters during the *Golden Hour*
+        """
+    )
+
+    st.markdown(
+        """
+        <a href="tel:108">
+            <button style="background:#e53935;color:white;padding:14px 26px;
+            border:none;border-radius:10px;font-size:18px;">
+                📞 Call 108 Now
+            </button>
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
     st.divider()
 
 # ---------------- SYMPTOMS ----------------
 if st.session_state.user_role:
-
     main, side = st.columns([3, 1])
 
     with main:
-        st.multiselect(
-            "Select symptoms",
-            st.session_state.options,
-            key="ui_selected"
-        )
-        add_symptoms(st.session_state.ui_selected)
+        st.write("### Select symptoms")
+        selected = st.multiselect("", st.session_state.options, key="ui_selected")
+        add_symptoms(selected)
+
+        st.divider()
+        st.write("### ➕ How do you want to add symptoms?")
+        st.radio("", ["✍️ Add via Text", "🎙️ Add via Voice"], key="input_mode", horizontal=True)
+
+        if st.session_state.input_mode == "✍️ Add via Text":
+            with st.form("text_form", clear_on_submit=True):
+                txt = st.text_input("Enter symptoms", placeholder="fever, headache")
+                if st.form_submit_button("Add") and txt:
+                    add_symptoms(split_text(txt))
+
+        if st.session_state.input_mode == "🎙️ Add via Voice":
+            audio = audio_recorder("")
+            if audio:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+                    f.write(audio)
+                    path = f.name
+                r = sr.Recognizer()
+                try:
+                    with sr.AudioFile(path) as src:
+                        audio_data = r.record(src)
+                    st.session_state.voice_text = r.recognize_google(audio_data)
+                except:
+                    st.error("Voice recognition failed")
+                finally:
+                    os.remove(path)
+
+            with st.form("voice_form", clear_on_submit=True):
+                voice = st.text_input("Recognized voice", value=st.session_state.voice_text)
+                if st.form_submit_button("Add Voice") and voice:
+                    add_symptoms(split_text(voice))
 
     with side:
         st.write("### 📋 Reported Symptoms")
@@ -173,6 +197,7 @@ if st.session_state.user_role:
     if not st.session_state.all_symptoms:
         st.stop()
 
+    # ---------------- SEVERITY ----------------
     severity = "Urgent"
     for s in st.session_state.all_symptoms:
         if classify_severity(s) == "Severe":
@@ -180,7 +205,6 @@ if st.session_state.user_role:
             break
 
     st.divider()
-
     if severity == "Severe":
         st.error("🔴 SEVERE EMERGENCY")
         st.markdown(f"[🧭 Find Trauma Hospitals]({maps_link('severe')})")
@@ -190,25 +214,43 @@ if st.session_state.user_role:
 
     st.info(explain_severity(st.session_state.all_symptoms, severity))
 
-    # ---------------- AI CHATBOX ----------------
+    # ---------------- AI CHAT BOX ----------------
     st.divider()
-    st.markdown("### 💬 Ask the AI Emergency Assistant")
+    st.markdown("### 💬 AI Emergency Assistant")
 
-    user_question = st.chat_input("Ask anything about the emergency...")
-
-    if user_question:
+    question = st.chat_input("Ask anything about the emergency…")
+    if question:
         with st.chat_message("user"):
-            st.write(user_question)
-
+            st.write(question)
         with st.chat_message("assistant"):
-            st.write(
-                ai_free_chat(
-                    user_question,
-                    st.session_state.all_symptoms,
-                    severity,
-                    st.session_state.user_role
-                )
-            )
+            st.write(ai_free_chat(
+                question,
+                st.session_state.all_symptoms,
+                severity,
+                st.session_state.user_role
+            ))
+
+# ---------------- PATIENT CALL ----------------
+if st.session_state.user_role == "👤 I am the patient":
+    st.divider()
+    st.error("📞 If you are in immediate danger, contact emergency services now.")
+    st.markdown(
+        """
+        <a href="tel:108">
+            <button style="background:#ff4b4b;color:white;padding:16px 32px;
+            border:none;border-radius:12px;font-size:20px;">
+                📞 Call 108 (Emergency)
+            </button>
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
+
+# ---------------- FOOTER IMAGE ----------------
+st.divider()
+IMAGE_PATH = "assets/goldenhour.jpg"
+if os.path.exists(IMAGE_PATH):
+    st.image(IMAGE_PATH, caption="⏱️ The Golden Hour – Immediate action saves lives", use_column_width=True)
 
 # ---------------- RESET ----------------
 st.divider()
