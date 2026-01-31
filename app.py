@@ -201,5 +201,3 @@ st.image(
     caption="⏱️ The Golden Hour – Immediate action saves lives",
     use_column_width=True
 )
-
-)
