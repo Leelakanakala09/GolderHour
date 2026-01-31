@@ -31,7 +31,7 @@ def init_state():
 init_state()
 
 # ---------------- AUTO RESET AFTER 5 MIN ----------------
-AUTO_RESET_TIME = 300
+AUTO_RESET_TIME = 300  # 5 minutes
 
 if time.time() - st.session_state.last_activity > AUTO_RESET_TIME:
     st.session_state.all_symptoms = []
@@ -74,6 +74,8 @@ left_space, right_panel = st.columns([2, 1])
 with right_panel:
     if os.path.exists("goldenhour.png"):
         st.image("goldenhour.png", use_column_width=True)
+    else:
+        st.warning("⚠️ goldenhour.png not found in project root")
 
     st.write("## Who is using this website?")
     st.radio(
@@ -138,7 +140,10 @@ if st.session_state.user_role:
                 os.remove(path)
 
         with st.form("voice_form", clear_on_submit=True):
-            voice_input = st.text_input("📝 Recognized voice", value=st.session_state.voice_text)
+            voice_input = st.text_input(
+                "📝 Recognized voice",
+                value=st.session_state.voice_text
+            )
             if st.form_submit_button("Add Voice") and voice_input.strip():
                 add_symptoms(split_text(voice_input))
 
