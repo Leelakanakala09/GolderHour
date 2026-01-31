@@ -89,6 +89,7 @@ if st.session_state.user_role:
 
     main, side = st.columns([3, 1])
 
+    # -------- MAIN --------
     with main:
         st.write("### Select symptoms")
         selected = st.multiselect(
@@ -100,6 +101,7 @@ if st.session_state.user_role:
         if selected:
             add_symptoms(selected)
 
+        # -------- INPUT MODE SELECT --------
         st.divider()
         st.write("### ➕ How do you want to add symptoms?")
 
@@ -111,6 +113,7 @@ if st.session_state.user_role:
             on_change=update_activity
         )
 
+        # -------- ADD VIA TEXT --------
         if st.session_state.input_mode == "✍️ Add via Text":
             with st.form("text_form", clear_on_submit=True):
                 text_input = st.text_input(
@@ -120,6 +123,7 @@ if st.session_state.user_role:
                 if st.form_submit_button("Add Text") and text_input.strip():
                     add_symptoms(split_text(text_input))
 
+        # -------- ADD VIA VOICE --------
         if st.session_state.input_mode == "🎙️ Add via Voice":
             st.write("🎤 Click to record")
             audio_bytes = audio_recorder("")
@@ -148,6 +152,7 @@ if st.session_state.user_role:
                 if st.form_submit_button("Add Voice") and voice_input.strip():
                     add_symptoms(split_text(voice_input))
 
+    # -------- SIDEBAR --------
     with side:
         st.write("### 📋 Reported Symptoms")
         if st.session_state.all_symptoms:
@@ -160,6 +165,7 @@ if st.session_state.user_role:
         st.warning("Please add at least one symptom.")
         st.stop()
 
+    # -------- SEVERITY CHECK --------
     severity = "Urgent"
     for s in st.session_state.all_symptoms:
         if classify_severity(s) == "Severe":
@@ -175,6 +181,7 @@ if st.session_state.user_role:
         st.warning("🟠 MEDICAL ATTENTION ADVISED")
         st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link()})")
 
+    # ---------------- RESET ----------------
     st.divider()
     st.write("### 🔄 Start New Emergency")
 
@@ -182,22 +189,14 @@ if st.session_state.user_role:
         st.session_state.clear()
         init_state()
         st.rerun()
+
 # ---------------- FOOTER IMAGE ----------------
 st.divider()
+IMAGE_PATH = "goldenhour.jpg"
 
-try:
+if os.path.exists(IMAGE_PATH):
     st.image(
-        "goldenhour.jpg",
+        IMAGE_PATH,
         caption="⏱️ The Golden Hour – Immediate action saves lives",
         width=900
     )
-except Exception as e:
-    st.warning("⚠️ Image could not be loaded")
-    st.text(str(e))
-# ---------------- FOOTER IMAGE (GOLDEN HOUR) ----------------
-st.divider()
-st.image(
-    "https://raw.githubusercontent.com/Leelakanakala09/GoldenHour/main/goldenhour.png",
-    caption="⏱️ The Golden Hour – Immediate action saves lives",
-    use_column_width=True
-)
