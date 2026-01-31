@@ -197,7 +197,9 @@ except Exception as e:
 # ---------------- FOOTER IMAGE (GOLDEN HOUR) ----------------
 st.divider()
 st.image(
-    "/mnt/data/5e55c10d-0eee-4360-a2d0-aa48501aa2f8.png",
+    "https://raw.githubusercontent.com/Leelakanakala09/GoldenHour/main/goldenhour.png",
     caption="⏱️ The Golden Hour – Immediate action saves lives",
     use_column_width=True
+)
+
 )
