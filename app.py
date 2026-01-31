@@ -62,7 +62,7 @@ def explain_severity(symptoms, severity):
         return (
             "⚠️ **Why this is severe?**\n\n"
             f"The selected symptom(s) **{', '.join(matched)}** are commonly associated "
-            "with potentially life-threatening conditions that require immediate care."
+            "with potentially life-threatening conditions requiring immediate medical care."
         )
 
     return (
@@ -76,30 +76,39 @@ def ai_free_chat(question, symptoms, severity, role):
     symptom_text = ", ".join(symptoms) if symptoms else "the reported symptoms"
 
     if any(x in q for x in ["severe", "serious", "danger"]):
-        return f"Based on **{symptom_text}**, this case is classified as **{severity}**, indicating potential medical risk."
+        return f"Based on **{symptom_text}**, this case is classified as **{severity}**."
 
     if any(x in q for x in ["what should", "what to do", "next"]):
-        if severity == "Severe":
-            return "You should immediately call emergency services and go to the nearest trauma hospital."
-        return "You should consult a doctor soon and monitor symptoms carefully."
+        return (
+            "Call emergency services immediately."
+            if severity == "Severe"
+            else "Consult a doctor soon and monitor symptoms carefully."
+        )
 
     if "cpr" in q or "first aid" in q:
-        return "CPR should only be performed if the patient is unresponsive and not breathing normally. Use the CPR video provided above."
+        return "CPR should only be performed if the patient is unresponsive and not breathing normally."
 
-    if "hospital" in q or "doctor" in q:
-        return "A hospital visit is advised. Use the hospital locator link above to find nearby facilities."
+    if "hospital" in q:
+        return "Use the hospital locator above to find nearby facilities."
 
     if role == "👥 I am helping someone else":
-        return "As a helper, ensure your own safety, avoid moving the patient unnecessarily, and follow emergency instructions."
+        return "Ensure your safety, avoid moving the patient unnecessarily, and follow emergency instructions."
 
-    return (
-        "I understand your concern. Based on the current information, "
-        "please monitor the situation closely and seek medical help if symptoms worsen."
-    )
+    return "Please monitor symptoms closely and seek medical help if they worsen."
 
-# ---------------- HEADER ----------------
+# ================= HEADER =================
 st.title("🚨 Golden Hour")
 st.subheader("AI Emergency Decision Assistant")
+
+# ✅ IMAGE AT START (ONLY PLACE IT APPEARS)
+IMAGE_PATH = "assets/goldenhour.jpg"
+if os.path.exists(IMAGE_PATH):
+    st.image(
+        IMAGE_PATH,
+        caption="⏱️ The Golden Hour – Immediate action saves lives",
+        use_column_width=True
+    )
+
 st.divider()
 
 # ---------------- ROLE SELECTION ----------------
@@ -159,7 +168,6 @@ if st.session_state.user_role:
         add_symptoms(selected)
 
         st.divider()
-        st.write("### ➕ How do you want to add symptoms?")
         st.radio("", ["✍️ Add via Text", "🎙️ Add via Voice"], key="input_mode", horizontal=True)
 
         if st.session_state.input_mode == "✍️ Add via Text":
@@ -214,7 +222,7 @@ if st.session_state.user_role:
 
     st.info(explain_severity(st.session_state.all_symptoms, severity))
 
-    # ---------------- AI CHAT BOX ----------------
+    # ---------------- AI CHAT ----------------
     st.divider()
     st.markdown("### 💬 AI Emergency Assistant")
 
@@ -245,19 +253,6 @@ if st.session_state.user_role == "👤 I am the patient":
         """,
         unsafe_allow_html=True
     )
-
-# ---------------- FOOTER IMAGE ----------------
-st.divider()
-IMAGE_PATH = "assets/goldenhour.jpg"
-   # make sure this file exists in same folder as app.py
-
-if os.path.exists(IMAGE_PATH):
-    st.image(
-        IMAGE_PATH,
-        caption="⏱️ The Golden Hour – Immediate action saves lives",
-        width=900
-    )
-
 
 # ---------------- RESET ----------------
 st.divider()
