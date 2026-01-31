@@ -110,7 +110,7 @@ st.radio(
 
 # ---------------- IMAGE (ONLY BEFORE SYMPTOMS) ----------------
 if len(st.session_state.all_symptoms) == 0:
-    IMAGE_PATH = "golden_hour...jpg"  # ✅ correct filename
+    IMAGE_PATH = "assets/goldenhour.jpg"  # ✅ correct filename
     if os.path.exists(IMAGE_PATH):
         st.image(
             IMAGE_PATH,
