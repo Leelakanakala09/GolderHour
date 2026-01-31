@@ -59,21 +59,63 @@ def explain_severity(symptoms, severity):
         "Road Accident",
         "Burn Injury"
     ]
-
     matched = [s for s in symptoms if s in severe_indicators]
 
     if severity == "Severe" and matched:
         return (
             "⚠️ **Why this is severe?**\n\n"
-            "Based on the selected symptom(s): "
-            f"**{', '.join(matched)}**, which may indicate "
-            "life-threatening trauma requiring immediate medical attention."
+            f"The selected symptom(s) **{', '.join(matched)}** are commonly associated "
+            "with life-threatening conditions that require immediate medical attention."
         )
 
     return (
         "ℹ️ **Why this is urgent?**\n\n"
         "The selected symptoms do not immediately indicate life-threatening trauma, "
-        "but still require prompt medical evaluation."
+        "but they still require prompt medical evaluation."
+    )
+
+# ---------------- AI CHAT FUNCTION ----------------
+def ai_free_chat(user_question, symptoms, severity, role):
+    q = user_question.lower()
+    symptom_text = ", ".join(symptoms) if symptoms else "the reported symptoms"
+
+    if any(word in q for word in ["severe", "serious", "danger", "life"]):
+        return (
+            f"Based on **{symptom_text}**, this case is classified as **{severity}**. "
+            "Severe cases may involve life-threatening conditions and should not be delayed."
+        )
+
+    if any(word in q for word in ["what should", "what to do", "next step", "now"]):
+        if severity == "Severe":
+            return (
+                "You should seek **immediate emergency medical care**. "
+                "Call emergency services and go to the nearest trauma hospital."
+            )
+        return (
+            "It is advisable to consult a medical professional soon and monitor symptoms closely."
+        )
+
+    if any(word in q for word in ["cpr", "first aid"]):
+        return (
+            "CPR may be required if the patient is unresponsive and not breathing normally. "
+            "Only perform CPR if you are trained. Please refer to the CPR video provided above."
+        )
+
+    if any(word in q for word in ["hospital", "doctor", "clinic"]):
+        return (
+            "Visiting a nearby hospital is recommended based on the current symptoms. "
+            "Use the hospital locator provided to find the nearest facility."
+        )
+
+    if role == "👥 I am helping someone else":
+        return (
+            "As a helper, ensure your own safety first, avoid unnecessary movement of the patient, "
+            "and follow emergency service instructions carefully."
+        )
+
+    return (
+        "I understand your concern. Based on the available information, "
+        "please continue monitoring the symptoms and seek medical help if the condition worsens."
     )
 
 # ---------------- HEADER ----------------
@@ -99,45 +141,15 @@ if st.session_state.user_role == "👥 I am helping someone else":
 
     with col1:
         st.markdown("### 🧍‍♂️ Scene Safety")
-        st.markdown("✅ Ensure the area is safe before approaching")
-        st.markdown("🚫 Do NOT move the patient unless there is danger")
+        st.markdown("✅ Ensure the area is safe")
+        st.markdown("🚫 Do NOT move the patient unnecessarily")
 
     with col2:
         st.markdown("### 🩺 Patient Check")
         st.markdown("🫁 Check breathing & responsiveness")
-        st.markdown("🩸 Apply firm pressure if there is bleeding")
+        st.markdown("🩸 Apply pressure if bleeding")
         st.markdown("❤️ **Learn CPR:** [Watch CPR Video](https://youtu.be/2PngCv7NjaI)")
 
-    st.markdown("---")
-    st.markdown(
-        """
-        🚑 **Emergency Action**
-        - 📞 Call emergency services immediately  
-        - 🗣️ Speak clearly and follow instructions  
-        - ⏱️ Every second matters during the *Golden Hour*
-        """
-    )
-
-    st.markdown(
-        """
-        <a href="tel:108" style="text-decoration:none;">
-            <button style="
-                background-color:#e53935;
-                color:white;
-                padding:14px 26px;
-                font-size:18px;
-                border:none;
-                border-radius:10px;
-                cursor:pointer;
-            ">
-                📞 Call 108 Now
-            </button>
-        </a>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.success("⬇️ Now, please report the patient’s symptoms")
     st.divider()
 
 # ---------------- SYMPTOMS ----------------
@@ -146,72 +158,21 @@ if st.session_state.user_role:
     main, side = st.columns([3, 1])
 
     with main:
-        st.write("### Select symptoms")
-        selected = st.multiselect(
-            "",
+        st.multiselect(
+            "Select symptoms",
             st.session_state.options,
-            key="ui_selected",
-            on_change=update_activity
+            key="ui_selected"
         )
-        if selected:
-            add_symptoms(selected)
-
-        st.divider()
-        st.write("### ➕ How do you want to add symptoms?")
-        st.radio(
-            "",
-            ["✍️ Add via Text", "🎙️ Add via Voice"],
-            key="input_mode",
-            horizontal=True
-        )
-
-        if st.session_state.input_mode == "✍️ Add via Text":
-            with st.form("text_form", clear_on_submit=True):
-                text_input = st.text_input(
-                    "Enter symptoms",
-                    placeholder="fever, headache and dizziness"
-                )
-                if st.form_submit_button("Add Text") and text_input.strip():
-                    add_symptoms(split_text(text_input))
-
-        if st.session_state.input_mode == "🎙️ Add via Voice":
-            audio_bytes = audio_recorder("")
-            if audio_bytes:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-                    f.write(audio_bytes)
-                    path = f.name
-
-                r = sr.Recognizer()
-                try:
-                    with sr.AudioFile(path) as src:
-                        audio = r.record(src)
-                    st.session_state.voice_text = r.recognize_google(audio)
-                except:
-                    st.error("Voice recognition failed")
-                finally:
-                    os.remove(path)
-
-            with st.form("voice_form", clear_on_submit=True):
-                voice_input = st.text_input(
-                    "📝 Recognized voice",
-                    value=st.session_state.voice_text
-                )
-                if st.form_submit_button("Add Voice") and voice_input.strip():
-                    add_symptoms(split_text(voice_input))
+        add_symptoms(st.session_state.ui_selected)
 
     with side:
         st.write("### 📋 Reported Symptoms")
-        if st.session_state.all_symptoms:
-            for s in st.session_state.all_symptoms:
-                st.success(s)
-        else:
-            st.info("No symptoms added yet")
+        for s in st.session_state.all_symptoms:
+            st.success(s)
 
     if not st.session_state.all_symptoms:
-        st.warning("Please add at least one symptom.")
         st.stop()
 
-    # ---------------- SEVERITY ----------------
     severity = "Urgent"
     for s in st.session_state.all_symptoms:
         if classify_severity(s) == "Severe":
@@ -227,42 +188,27 @@ if st.session_state.user_role:
         st.warning("🟠 MEDICAL ATTENTION ADVISED")
         st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link()})")
 
-    # ✅ Explainable AI box
     st.info(explain_severity(st.session_state.all_symptoms, severity))
 
-# ---------------- PATIENT CALL ----------------
-if st.session_state.user_role == "👤 I am the patient":
+    # ---------------- AI CHATBOX ----------------
     st.divider()
-    st.error("📞 If you are in immediate danger, contact emergency services now.")
-    st.markdown(
-        """
-        <a href="tel:108">
-            <button style="
-                background-color:#ff4b4b;
-                color:white;
-                padding:16px 32px;
-                font-size:20px;
-                border:none;
-                border-radius:12px;
-                cursor:pointer;
-            ">
-                📞 Call 108 (Emergency)
-            </button>
-        </a>
-        """,
-        unsafe_allow_html=True
-    )
+    st.markdown("### 💬 Ask the AI Emergency Assistant")
 
-# ---------------- FOOTER IMAGE ----------------
-st.divider()
-IMAGE_PATH = "assets/goldenhour.jpg"
+    user_question = st.chat_input("Ask anything about the emergency...")
 
-if os.path.exists(IMAGE_PATH):
-    st.image(
-        IMAGE_PATH,
-        caption="⏱️ The Golden Hour – Immediate action saves lives",
-        use_column_width=True
-    )
+    if user_question:
+        with st.chat_message("user"):
+            st.write(user_question)
+
+        with st.chat_message("assistant"):
+            st.write(
+                ai_free_chat(
+                    user_question,
+                    st.session_state.all_symptoms,
+                    severity,
+                    st.session_state.user_role
+                )
+            )
 
 # ---------------- RESET ----------------
 st.divider()
