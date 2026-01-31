@@ -1,11 +1,7 @@
-def get_nearby_hospitals(emergency):
-    if emergency in ["Road Accident", "Heavy Bleeding", "Chest Pain", "Breathing Problem"]:
+def get_maps_link(severity):
+    if severity == "Severe":
         query = "trauma hospital near me"
     else:
         query = "hospital near me"
 
-    maps_url = f"https://www.google.com/maps/search/{query.replace(' ', '+')}"
-
-    return {
-        "maps": maps_url
-    }
+    return f"https://www.google.com/maps/search/{query.replace(' ', '+')}"
