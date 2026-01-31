@@ -17,13 +17,22 @@ def init_state():
         ],
         "ui_selected": [],
         "all_symptoms": [],
-        "voice_text": ""
+        "voice_text": "",
+        "reset_trigger": False
     }
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
 
 init_state()
+
+# ---------------- HANDLE RESET EARLY ----------------
+if st.session_state.reset_trigger:
+    st.session_state.all_symptoms = []
+    st.session_state.ui_selected = []
+    st.session_state.voice_text = ""
+    st.session_state.reset_trigger = False
+    st.rerun()
 
 # ---------------- HELPERS ----------------
 def split_text(text):
@@ -42,12 +51,11 @@ def add_symptoms(items):
 # ---------------- HEADER ----------------
 st.title("🚨 Golden Hour")
 st.subheader("AI Emergency Decision Assistant")
-st.write("Get instant guidance during medical emergencies")
 st.divider()
 
 main, side = st.columns([3, 1])
 
-# ================= MAIN COLUMN =================
+# ================= MAIN =================
 with main:
 
     # -------- MULTISELECT --------
@@ -61,17 +69,14 @@ with main:
     if selected:
         add_symptoms(selected)
 
-    # -------- TEXT INPUT (SAFE FORM) --------
+    # -------- TEXT INPUT --------
     st.write("### ➕ Add via text")
-
     with st.form("text_form", clear_on_submit=True):
         text_input = st.text_input(
             "",
             placeholder="fever, headache and dizziness"
         )
-        submitted = st.form_submit_button("Add Text")
-
-        if submitted and text_input.strip():
+        if st.form_submit_button("Add Text") and text_input.strip():
             add_symptoms(split_text(text_input))
 
     # -------- VOICE INPUT --------
@@ -97,40 +102,33 @@ with main:
         finally:
             os.remove(audio_path)
 
-    # -------- VOICE CONFIRM (SAFE FORM) --------
     with st.form("voice_form", clear_on_submit=True):
         voice_input = st.text_input(
             "📝 Recognized voice",
-            value=st.session_state.voice_text,
-            placeholder="Voice text appears here"
+            value=st.session_state.voice_text
         )
-        add_voice = st.form_submit_button("Add Voice")
-
-        if add_voice and voice_input.strip():
+        if st.form_submit_button("Add Voice") and voice_input.strip():
             add_symptoms(split_text(voice_input))
 
 # ================= SIDEBAR =================
 with side:
     st.write("### 📋 All Added Symptoms")
+
     if st.session_state.all_symptoms:
         for s in st.session_state.all_symptoms:
             st.success(s)
     else:
         st.info("No symptoms added yet")
- 
+
     st.divider()
 
-    # -------- RESET BUTTON --------
     if st.button("🗑️ Reset All Symptoms"):
-        st.session_state.all_symptoms.clear()
-        st.session_state.ui_selected.clear()
-        st.session_state.voice_text = ""
+        st.session_state.reset_trigger = True
         st.rerun()
 
-
-# ---------------- SEVERITY LOGIC ----------------
+# ---------------- SEVERITY ----------------
 if not st.session_state.all_symptoms:
-    st.warning("Please add at least one symptom to continue.")
+    st.warning("Please add at least one symptom.")
     st.stop()
 
 severity = "Urgent"
@@ -145,16 +143,9 @@ def maps_link(level):
 
 st.divider()
 
-# ---------------- RESULT ----------------
 if severity == "Severe":
     st.error("🔴 SEVERE EMERGENCY")
-    st.write("📞 Call emergency services immediately")
-    st.write("🩸 Provide basic first aid")
     st.markdown(f"[🧭 Find Trauma Hospitals]({maps_link(severity)})")
-
-    if st.button("🚨 PANIC MODE"):
-        st.error("CALL AMBULANCE NOW 🚑")
-
 else:
     st.warning("🟠 URGENT MEDICAL ATTENTION NEEDED")
     st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link(severity)})")
