@@ -21,9 +21,8 @@ def init_state():
         "ui_selected": [],
         "all_symptoms": [],
         "voice_text": "",
-        "last_activity": time.time(),
-        "confirm_reset": False,
-        "input_mode": "✍️ Add via Text"
+        "input_mode": "✍️ Add via Text",
+        "last_activity": time.time()
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -31,18 +30,10 @@ def init_state():
 
 init_state()
 
-# ---------------- AUTO RESET AFTER 5 MIN ----------------
-AUTO_RESET_TIME = 300
-
-if time.time() - st.session_state.last_activity > AUTO_RESET_TIME:
-    st.session_state.clear()
-    init_state()
-    st.rerun()
-
+# ---------------- HELPERS ----------------
 def update_activity():
     st.session_state.last_activity = time.time()
 
-# ---------------- HELPERS ----------------
 def split_text(text):
     for sep in [",", "&", " and "]:
         text = text.replace(sep, "|")
@@ -76,20 +67,62 @@ st.radio(
 
 # ---------------- HELPER GUIDELINES ----------------
 if st.session_state.user_role == "👥 I am helping someone else":
-    st.info("👥 **Helper Safety & First-Aid Guidelines**")
-    st.write("• Ensure the area is safe")
-    st.write("• Do NOT move the patient unnecessarily")
-    st.write("• Apply pressure if bleeding")
-    st.write("• Check breathing and responsiveness")
-    st.write("• Call emergency services immediately")
+    st.markdown("## 🛟 Helper Safety & First-Aid Guidelines")
+
+    st.info("⚠️ Your safety comes first. Stay calm and act quickly.")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 🧍‍♂️ Scene Safety")
+        st.markdown("✅ Ensure the area is safe before approaching")
+        st.markdown("🚫 Do NOT move the patient unless there is danger")
+
+    with col2:
+        st.markdown("### 🩺 Patient Check")
+        st.markdown("🫁 Check breathing & responsiveness")
+        st.markdown("🩸 Apply firm pressure if there is bleeding")
+
+    st.markdown("---")
+
+    st.markdown(
+        """
+        🚑 **Emergency Action**
+        - 📞 Call emergency services immediately
+        - 🗣️ Speak clearly and follow instructions
+        - ⏱️ Every second matters during the *Golden Hour*
+        """
+    )
+
+    # 🔴 CALL 108 (HELPER)
+    st.markdown(
+        """
+        <a href="tel:108" style="text-decoration:none;">
+            <button style="
+                background-color:#e53935;
+                color:white;
+                padding:14px 26px;
+                font-size:18px;
+                border:none;
+                border-radius:10px;
+                cursor:pointer;
+                margin-top:10px;
+            ">
+                📞 Call 108 Now
+            </button>
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.success("⬇️ Now, please report the patient’s symptoms")
     st.divider()
 
-# ================= SYMPTOMS =================
+# ---------------- SYMPTOMS SECTION ----------------
 if st.session_state.user_role:
 
     main, side = st.columns([3, 1])
 
-    # -------- MAIN --------
     with main:
         st.write("### Select symptoms")
         selected = st.multiselect(
@@ -101,7 +134,6 @@ if st.session_state.user_role:
         if selected:
             add_symptoms(selected)
 
-        # -------- INPUT MODE SELECT --------
         st.divider()
         st.write("### ➕ How do you want to add symptoms?")
 
@@ -109,8 +141,7 @@ if st.session_state.user_role:
             "",
             ["✍️ Add via Text", "🎙️ Add via Voice"],
             key="input_mode",
-            horizontal=True,
-            on_change=update_activity
+            horizontal=True
         )
 
         # -------- ADD VIA TEXT --------
@@ -138,7 +169,6 @@ if st.session_state.user_role:
                     with sr.AudioFile(path) as src:
                         audio = r.record(src)
                     st.session_state.voice_text = r.recognize_google(audio)
-                    update_activity()
                 except:
                     st.error("Voice recognition failed")
                 finally:
@@ -152,7 +182,6 @@ if st.session_state.user_role:
                 if st.form_submit_button("Add Voice") and voice_input.strip():
                     add_symptoms(split_text(voice_input))
 
-    # -------- SIDEBAR --------
     with side:
         st.write("### 📋 Reported Symptoms")
         if st.session_state.all_symptoms:
@@ -165,7 +194,7 @@ if st.session_state.user_role:
         st.warning("Please add at least one symptom.")
         st.stop()
 
-    # -------- SEVERITY CHECK --------
+    # ---------------- SEVERITY ----------------
     severity = "Urgent"
     for s in st.session_state.all_symptoms:
         if classify_severity(s) == "Severe":
@@ -181,18 +210,35 @@ if st.session_state.user_role:
         st.warning("🟠 MEDICAL ATTENTION ADVISED")
         st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link()})")
 
-    # ---------------- RESET ----------------
+# ---------------- PATIENT EMERGENCY CALL ----------------
+if st.session_state.user_role == "👤 I am the patient":
     st.divider()
-    st.write("### 🔄 Start New Emergency")
+    st.markdown("## 🚨 Emergency Contact")
 
-    if st.button("Start New Emergency"):
-        st.session_state.clear()
-        init_state()
-        st.rerun()
+    st.error("📞 If you are in immediate danger, contact emergency services now.")
+
+    st.markdown(
+        """
+        <a href="tel:108" style="text-decoration:none;">
+            <button style="
+                background-color:#ff4b4b;
+                color:white;
+                padding:16px 32px;
+                font-size:20px;
+                border:none;
+                border-radius:12px;
+                cursor:pointer;
+            ">
+                📞 Call 108 (Emergency)
+            </button>
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ---------------- FOOTER IMAGE ----------------
 st.divider()
-IMAGE_PATH = "goldenhour.jpg"
+IMAGE_PATH = "golden_hour...jpg"   # make sure this file exists in same folder as app.py
 
 if os.path.exists(IMAGE_PATH):
     st.image(
@@ -200,3 +246,10 @@ if os.path.exists(IMAGE_PATH):
         caption="⏱️ The Golden Hour – Immediate action saves lives",
         width=900
     )
+
+# ---------------- RESET ----------------
+st.divider()
+if st.button("🔄 Start New Emergency"):
+    st.session_state.clear()
+    init_state()
+    st.rerun()
