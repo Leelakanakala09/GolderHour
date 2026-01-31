@@ -189,8 +189,4 @@ st.divider()
     if st.button("🔄 Start New Emergency"):
         st.session_state.reset_trigger = True
         st.rerun()
-    # -------- START NEW EMERGENCY (CORRECT PLACE) --------
-    st.divider()
-    if st.button("🔄 Start New Emergency"):
-        st.session_state.reset_trigger = True
-        st.rerun()
+  
