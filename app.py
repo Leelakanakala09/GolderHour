@@ -187,7 +187,7 @@ st.divider()
 
 try:
     st.image(
-        "goldenhour.png",
+        "goldenhour.jpg",
         caption="⏱️ The Golden Hour – Immediate action saves lives",
         width=900
     )
