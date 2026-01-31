@@ -57,15 +57,7 @@ def maps_link(level="normal"):
 st.title("🚨 Golden Hour")
 st.subheader("AI Emergency Decision Assistant")
 
-# ---------------- SAFE IMAGE LOAD ----------------
-IMAGE_PATH = "assets/goldenhour.png"
 
-if os.path.exists(IMAGE_PATH):
-    st.image(IMAGE_PATH, use_column_width=True)
-else:
-    st.warning("⚠️ Banner image not found. (assets/goldenhour.png)")
-
-st.divider()
 
 # ---------------- ROLE SELECTION ----------------
 st.write("## Who is using this website?")
@@ -183,4 +175,12 @@ if st.session_state.user_role:
     else:
         st.warning("🟠 MEDICAL ATTENTION ADVISED")
         st.markdown(f"[🧭 Find Nearby Hospitals]({maps_link()})")
+# ---------------- SAFE IMAGE LOAD ----------------
+IMAGE_PATH = "assets/goldenhour.png"
 
+if os.path.exists(IMAGE_PATH):
+    st.image(IMAGE_PATH, use_column_width=True)
+else:
+    st.warning("⚠️ Banner image not found. (assets/goldenhour.png)")
+
+st.divider()
