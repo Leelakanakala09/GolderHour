@@ -13,6 +13,7 @@ st.set_page_config(page_title="Golden Hour", layout="wide")
 def init_state():
     defaults = {
         "user_role": None,
+        "age_group": None,
         "options": [
             "Road Accident", "Heavy Bleeding", "Chest Pain",
             "Breathing Problem", "Burn Injury", "Fever",
@@ -62,7 +63,7 @@ def explain_severity(symptoms, severity):
         return (
             "⚠️ **Why this is severe?**\n\n"
             f"The selected symptom(s) **{', '.join(matched)}** are commonly associated "
-            "with potentially life-threatening conditions that require immediate care."
+            "with potentially life-threatening conditions requiring immediate care."
         )
 
     return (
@@ -70,80 +71,77 @@ def explain_severity(symptoms, severity):
         "The selected symptoms may worsen if ignored and should be evaluated by a medical professional."
     )
 
-# ---------------- AI CHAT FUNCTION ----------------
-def ai_free_chat(question, symptoms, severity, role):
+# ---------------- AI CHAT ----------------
+def ai_free_chat(question, symptoms, severity, role, age):
     q = question.lower()
     symptom_text = ", ".join(symptoms) if symptoms else "the reported symptoms"
 
-    if any(x in q for x in ["severe", "serious", "danger"]):
-        return f"Based on **{symptom_text}**, this case is classified as **{severity}**."
+    if "age" in q:
+        return f"The patient is classified as **{age}**. Age can influence risk levels and recovery."
 
-    if any(x in q for x in ["what should", "what to do", "next"]):
-        if severity == "Severe":
-            return "You should immediately call emergency services and go to the nearest trauma hospital."
-        return "You should consult a doctor soon and monitor symptoms carefully."
+    if any(x in q for x in ["severe", "danger"]):
+        return f"Based on **{symptom_text}**, the condition is **{severity}**."
 
-    if "cpr" in q or "first aid" in q:
-        return "CPR should only be performed if the patient is unresponsive and not breathing normally."
+    if "what to do" in q or "next" in q:
+        return "Call emergency services immediately if symptoms worsen."
 
-    if "hospital" in q:
-        return "Use the hospital locator above to find nearby facilities."
+    if "cpr" in q:
+        return "Perform CPR only if the patient is unresponsive and not breathing normally."
 
-    if role == "👥 I am helping someone else":
-        return "Ensure safety, avoid moving the patient unnecessarily, and follow emergency instructions."
+    return "I’m here to help. Please ask anything related to the emergency."
 
-    return "Please monitor symptoms closely and seek medical help if the condition worsens."
-
-# ---------------- HEADER ----------------
-st.title("🚨 Golden Hour")
-st.subheader("AI Emergency Decision Assistant")
-st.divider()
-
-# ---------------- ROLE SELECTION ----------------
-st.write("## Who is using this website?")
-st.radio(
-    "",
-    ["👤 I am the patient", "👥 I am helping someone else"],
-    key="user_role",
-    on_change=update_activity
+# ---------------- HEADER (CENTERED) ----------------
+st.markdown(
+    """
+    <div style="text-align:center;">
+        <h1>🚨 Golden Hour</h1>
+        <h3>AI Emergency Decision Assistant</h3>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
-# ---------------- IMAGE (ONLY AT START) ----------------
-if st.session_state.user_role is None:
-    st.divider()
-    IMAGE_PATH = "assets/goldenhour.jpg"
-    if os.path.exists(IMAGE_PATH):
-        st.image(
-            IMAGE_PATH,
-            caption="⏱️ The Golden Hour – Immediate action saves lives",
-            use_column_width=True
-        )
-    st.divider()
+st.divider()
+
+# ---------------- ROLE + AGE SELECTION ----------------
+left, right = st.columns([3, 2])
+
+with left:
+    st.write("## Who is using this website?")
+    st.radio(
+        "",
+        ["👤 I am the patient", "👥 I am helping someone else"],
+        key="user_role",
+        on_change=update_activity
+    )
+
+with right:
+    st.write("## Select Age Group")
+    st.radio(
+        "",
+        ["🧒 Young", "🧑 Middle Aged", "👴 Aged"],
+        key="age_group",
+        on_change=update_activity
+    )
+
+st.divider()
 
 # ---------------- HELPER GUIDELINES ----------------
 if st.session_state.user_role == "👥 I am helping someone else":
     st.markdown("## 🛟 Helper Safety & First-Aid Guidelines")
     st.info("⚠️ Your safety comes first.")
 
-    col1, col2 = st.columns(2)
-    with col1:
+    c1, c2 = st.columns(2)
+    with c1:
         st.markdown("### 🧍‍♂️ Scene Safety")
         st.markdown("✅ Ensure the area is safe")
         st.markdown("🚫 Do NOT move the patient unnecessarily")
 
-    with col2:
+    with c2:
         st.markdown("### 🩺 Patient Check")
         st.markdown("🫁 Check breathing & responsiveness")
         st.markdown("🩸 Apply firm pressure if bleeding")
-        st.markdown("❤️ **Learn CPR:** [Watch CPR Video](https://youtu.be/2PngCv7NjaI)")
-
-    st.markdown(
-        """
-        🚑 **Emergency Action**
-        - 📞 Call emergency services immediately
-        - ⏱️ Every second matters during the *Golden Hour*
-        """
-    )
+        st.markdown("❤️ **CPR Video:** [Watch Here](https://youtu.be/2PngCv7NjaI)")
 
     st.markdown(
         """
@@ -156,6 +154,7 @@ if st.session_state.user_role == "👥 I am helping someone else":
         """,
         unsafe_allow_html=True
     )
+
     st.divider()
 
 # ---------------- SYMPTOMS ----------------
@@ -168,12 +167,11 @@ if st.session_state.user_role:
         add_symptoms(selected)
 
         st.divider()
-        st.write("### ➕ How do you want to add symptoms?")
         st.radio("", ["✍️ Add via Text", "🎙️ Add via Voice"], key="input_mode", horizontal=True)
 
         if st.session_state.input_mode == "✍️ Add via Text":
             with st.form("text_form", clear_on_submit=True):
-                txt = st.text_input("Enter symptoms", placeholder="fever, headache")
+                txt = st.text_input("Enter symptoms")
                 if st.form_submit_button("Add") and txt:
                     add_symptoms(split_text(txt))
 
@@ -222,8 +220,10 @@ if st.session_state.user_role:
 
     st.info(explain_severity(st.session_state.all_symptoms, severity))
 
+    # ---------------- AI CHAT ----------------
     st.divider()
     st.markdown("### 💬 AI Emergency Assistant")
+
     question = st.chat_input("Ask anything about the emergency…")
     if question:
         with st.chat_message("user"):
@@ -233,7 +233,8 @@ if st.session_state.user_role:
                 question,
                 st.session_state.all_symptoms,
                 severity,
-                st.session_state.user_role
+                st.session_state.user_role,
+                st.session_state.age_group
             ))
 
 # ---------------- RESET ----------------
