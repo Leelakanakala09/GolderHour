@@ -56,6 +56,14 @@ def maps_link(level="normal"):
 # ---------------- HEADER ----------------
 st.title("🚨 Golden Hour")
 st.subheader("AI Emergency Decision Assistant")
+# ---------------- ROLE SELECTION ----------------
+st.write("## Who is using this website?")
+st.radio(
+    "",
+    ["👤 I am the patient", "👥 I am helping someone else"],
+    key="user_role"
+)
+
 
 # ---------------- SAFE IMAGE LOAD ----------------
 IMAGE_PATH = "assets/goldenhour.png"
@@ -67,13 +75,6 @@ else:
 
 st.divider()
 
-# ---------------- ROLE SELECTION ----------------
-st.write("## Who is using this website?")
-st.radio(
-    "",
-    ["👤 I am the patient", "👥 I am helping someone else"],
-    key="user_role"
-)
 
 # ---------------- HELPER GUIDELINES ----------------
 if st.session_state.user_role == "👥 I am helping someone else":
