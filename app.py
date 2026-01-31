@@ -7,6 +7,11 @@ from emergency_data import classify_severity
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Golden Hour", layout="wide")
+st.title("🚨 Golden Hour")
+st.subheader("AI Emergency Decision Assistant")
+
+st.image("assets/golden_hour.png", use_column_width=True)
+
 
 # ---------------- INIT SESSION STATE ----------------
 def init_state():
