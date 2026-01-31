@@ -182,18 +182,15 @@ if st.session_state.user_role:
         st.session_state.clear()
         init_state()
         st.rerun()
-
 # ---------------- FOOTER IMAGE ----------------
 st.divider()
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-IMAGE_PATH = os.path.join(BASE_DIR, "goldenhour.png")
-
-if os.path.exists(IMAGE_PATH):
+try:
     st.image(
-        IMAGE_PATH,
+        "goldenhour.png",
         caption="⏱️ The Golden Hour – Immediate action saves lives",
         width=900
     )
-else:
-    st.warning("⚠️ goldenhour.png not found at: " + IMAGE_PATH)
+except Exception as e:
+    st.warning("⚠️ Image could not be loaded")
+    st.text(str(e))
