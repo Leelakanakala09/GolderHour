@@ -238,7 +238,7 @@ if st.session_state.user_role == "👤 I am the patient":
 
 # ---------------- FOOTER IMAGE ----------------
 st.divider()
-IMAGE_PATH = "goldenhour.png"   # make sure this file exists in same folder as app.py
+IMAGE_PATH = "goldenhour.jpg"   # make sure this file exists in same folder as app.py
 
 if os.path.exists(IMAGE_PATH):
     st.image(
