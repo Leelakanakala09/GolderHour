@@ -57,12 +57,13 @@ def maps_link(level="normal"):
 st.title("🚨 Golden Hour")
 st.subheader("AI Emergency Decision Assistant")
 
-# ✅ IMAGE (FIXED PATH – NO SPACE)
-import os
-st.write("Files in root:", os.listdir("."))
-st.write("Files in assets:", os.listdir("assets") if os.path.exists("assets") else "assets folder NOT FOUND")
+# ---------------- SAFE IMAGE LOAD ----------------
+IMAGE_PATH = "assets/golden_hour.png"
 
-st.image("assets/golden_hour.png", use_column_width=True)
+if os.path.exists(IMAGE_PATH):
+    st.image(IMAGE_PATH, use_column_width=True)
+else:
+    st.warning("⚠️ Banner image not found. (assets/golden_hour.png)")
 
 st.divider()
 
@@ -101,7 +102,7 @@ if st.session_state.user_role:
 
     main, side = st.columns([3, 1])
 
-    # -------- MAIN COLUMN --------
+    # -------- MAIN --------
     with main:
         st.write("### Select symptoms")
         selected = st.multiselect(
